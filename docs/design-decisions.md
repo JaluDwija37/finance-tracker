@@ -14,3 +14,5 @@ Design Read: aplikasi keuangan pribadi untuk satu pemilik, dengan bahasa visual 
 - Workspace kini memakai satu route server-rendered. Lima tab berpindah di klien tanpa reload, sementara data awal tetap tersedia dalam HTML dan setiap server action memperbarui data dari database.
 - Form edit muncul sebagai lembar dari bawah pada ponsel agar dekat dengan jempol; di layar besar menjadi dialog terpusat. Navigasi bawah tetap memiliki label pada semua ikon.
 - Alur yang mengubah histori finansial memakai pembatalan atau arsip, sehingga audit dan saldo bisa dihitung ulang. Budget, harga aset, tautan kontribusi, dan snapshot dapat dihapus karena data sumbernya tetap terjaga.
+- Ikon kategori memakai pilihan Font Awesome yang terbatas dan relevan dengan nama kategori, sehingga daftar transaksi lebih mudah dipindai tanpa menjadikan setiap kartu dekorasi warna berbeda. Identitas teks Finance Tracker tetap tanpa logo.
+- Koreksi saldo memakai saldo nyata sebagai masukan, lalu memperlihatkan selisih sebelum disimpan sebagai transaksi. Ini mengurangi risiko salah memilih arah atau menghitung nominal koreksi secara manual.

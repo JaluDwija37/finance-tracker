@@ -1,5 +1,5 @@
 export type AccountView = { id: string; name: string; type: "CASH" | "BANK" | "EWALLET" | "INVESTMENT_CASH" | "OTHER_ASSET"; openingBalance: string; openingDate: string; isArchived: boolean };
-export type CategoryView = { id: string; name: string; kind: "INCOME" | "EXPENSE"; parentId: string | null; isArchived: boolean };
+export type CategoryView = { id: string; name: string; kind: "INCOME" | "EXPENSE"; parentId: string | null; icon: string | null; isArchived: boolean };
 export type TransactionView = { id: string; type: "INCOME" | "EXPENSE" | "TRANSFER" | "ADJUSTMENT"; amount: string; date: string; accountId: string; destinationAccountId: string | null; categoryId: string | null; adjustmentDirection: "INCREASE" | "DECREASE" | null; note: string | null; status: "DRAFT" | "POSTED" | "VOID"; source: "MANUAL" | "RECURRING" | "IMPORT" | "SYSTEM" };
 export type BudgetView = { id: string; categoryId: string; period: "DAY" | "MONTH" | "CYCLE" | "YEAR"; amount: string };
 export type GoalView = { id: string; name: string; targetAmount: string; targetDate: string | null; linkedAccountId: string | null; priority: number; status: "ACTIVE" | "COMPLETED" | "PAUSED"; isArchived: boolean };

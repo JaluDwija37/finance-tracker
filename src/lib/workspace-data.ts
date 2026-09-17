@@ -21,7 +21,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
   ]);
   return {
     accounts: accounts.map(({ id, name, type, openingBalance, openingDate, isArchived }) => ({ id, name, type, openingBalance: openingBalance.toString(), openingDate: iso(openingDate), isArchived })),
-    categories: categories.map(({ id, name, kind, parentId, isArchived }) => ({ id, name, kind, parentId, isArchived })),
+    categories: categories.map(({ id, name, kind, parentId, icon, isArchived }) => ({ id, name, kind, parentId, icon, isArchived })),
     transactions: transactions.map(({ id, type, amount, transactionDate, accountId, destinationAccountId, categoryId, adjustmentDirection, note, status, source }) => ({ id, type, amount: amount.toString(), date: iso(transactionDate), accountId, destinationAccountId, categoryId, adjustmentDirection, note, status, source })),
     budgets: budgets.map(({ id, categoryId, period, amount }) => ({ id, categoryId, period, amount: amount.toString() })),
     goals: goals.map(({ id, name, targetAmount, targetDate, linkedAccountId, priority, status, isArchived }) => ({ id, name, targetAmount: targetAmount.toString(), targetDate: targetDate ? iso(targetDate) : null, linkedAccountId, priority, status, isArchived })),

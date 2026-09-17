@@ -2,15 +2,18 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { WorkspaceData, TransactionView } from "@/lib/workspace-types";
+import { accountBalances } from "@/lib/workspace-metrics";
+import { categoryIcons, suggestedCategoryIcon } from "@/lib/category-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { WorkspaceResult } from "./workspace-actions";
-import { saveAccount, saveBudget, saveCategory, saveTransaction } from "./workspace-actions";
+import { correctAccountBalance, moveCategoryTransactions, saveAccount, saveBudget, saveCategory, saveTransaction } from "./workspace-actions";
 import { saveAsset, saveContribution, saveGoal, savePrice, saveRecurring, saveSettings, saveSnapshot, saveTrade } from "./workspace-more-actions";
 
-export type EditorKind = "account" | "category" | "transaction" | "budget" | "goal" | "contribution" | "recurring" | "asset" | "trade" | "price" | "snapshot" | "settings";
+export type EditorKind = "account" | "correction" | "category" | "moveCategory" | "transaction" | "budget" | "goal" | "contribution" | "recurring" | "asset" | "trade" | "price" | "snapshot" | "settings";
 export type Editor = { kind: EditorKind; id?: string };
 
 const labels: Record<EditorKind, string> = {
-  account: "akun", category: "kategori", transaction: "transaksi", budget: "budget",
+  account: "akun", correction: "koreksi saldo", category: "kategori", moveCategory: "pemindahan transaksi", transaction: "transaksi", budget: "budget",
   goal: "target tabungan", contribution: "kontribusi", recurring: "jadwal tetap",
   asset: "aset investasi", trade: "transaksi investasi", price: "harga aset",
   snapshot: "rekonsiliasi", settings: "pengaturan",
@@ -37,6 +40,35 @@ function ActionForm({ action, children, onSaved, submit }: { action: Action; chi
 const Field = ({ label, name, children }: { label: string; name: string; children: React.ReactNode }) => <div className="field"><label htmlFor={`work-${name}`}>{label}</label>{children}</div>;
 const Input = ({ name, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { name: string }) => <input id={`work-${name}`} name={name} {...props} />;
 const Select = ({ name, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { name: string }) => <select id={`work-${name}`} name={name} {...props}>{children}</select>;
+
+function CorrectionFields({ data, accountId }: { data: WorkspaceData; accountId?: string }) {
+  const [selected, setSelected] = useState(accountId ?? data.accounts.find((item) => !item.isArchived)?.id ?? "");
+  const [observed, setObserved] = useState("");
+  const current = accountBalances(data).get(selected) ?? 0n;
+  const valid = /^-?(0|[1-9]\d*)$/.test(observed);
+  const difference = valid ? BigInt(observed) - current : null;
+  const format = (value: bigint) => `Rp${value.toLocaleString("id-ID")}`;
+  return <>
+    <Field label="Akun" name="accountId"><Select name="accountId" required value={selected} onChange={(event) => setSelected(event.target.value)}>{data.accounts.filter((item) => !item.isArchived).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    <p className="field-help">Saldo di catatan sekarang: <strong>{format(current)}</strong></p>
+    <Field label="Saldo nyata saat ini (Rp)" name="observedBalance"><Input name="observedBalance" inputMode="numeric" pattern="-?(0|[1-9][0-9]*)" required value={observed} onChange={(event) => setObserved(event.target.value)} placeholder="Masukkan saldo yang terlihat di akun" /></Field>
+    {difference !== null && <p className="ws-correction-preview" role="status">{difference === 0n ? "Saldo sudah sesuai." : `${difference > 0n ? "Tambah" : "Kurangi"} ${format(difference < 0n ? -difference : difference)} lewat transaksi koreksi.`}</p>}
+    <Field label="Alasan koreksi" name="reason"><Input name="reason" required minLength={5} maxLength={250} placeholder="Contoh: selisih setelah mencocokkan rekening" /></Field>
+    <p className="field-help">Riwayat lama tetap ada. Selisih akan muncul sebagai transaksi Koreksi saldo hari ini.</p>
+  </>;
+}
+
+function MoveCategoryFields({ data, initialSourceId }: { data: WorkspaceData; initialSourceId?: string }) {
+  const [sourceId, setSourceId] = useState(initialSourceId ?? "");
+  const source = data.categories.find((item) => item.id === sourceId);
+  const count = data.transactions.filter((item) => item.categoryId === sourceId).length;
+  return <>
+    <Field label="Dari kategori" name="sourceId"><Select name="sourceId" required value={sourceId} onChange={(event) => setSourceId(event.target.value)}><option value="" disabled>Pilih asal</option>{data.categories.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.kind === "EXPENSE" ? "pengeluaran" : "pemasukan"}</option>)}</Select></Field>
+    <Field label="Ke kategori" name="destinationId"><Select name="destinationId" key={sourceId} required defaultValue=""><option value="" disabled>Pilih tujuan</option>{data.categories.filter((item) => !item.isArchived && item.id !== sourceId && (!source || item.kind === source.kind)).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    {source && <p className="ws-correction-preview">{count} transaksi dalam kategori {source.name} akan dipindahkan.</p>}
+    <p className="field-help">Nominal dan saldo tidak berubah. Budget dan jadwal tetap memakai kategori asal.</p>
+  </>;
+}
 
 function TransactionFields({ data, item, today }: { data: WorkspaceData; item?: TransactionView; today: string }) {
   const [type, setType] = useState<TransactionView["type"]>(item?.type ?? "EXPENSE");
@@ -82,7 +114,7 @@ export function WorkspaceEditorForm({ editor, data, today, onSaved }: { editor: 
   const trade = data.trades.find((item) => item.id === id);
   const price = data.prices.find((item) => item.id === id);
   const snapshot = data.snapshots.find((item) => item.id === id);
-  const title = kind === "settings" ? "Pengaturan" : `${id ? "Ubah" : "Tambah"} ${labels[kind]}`;
+  const title = kind === "settings" ? "Pengaturan" : kind === "correction" ? "Koreksi saldo" : kind === "moveCategory" ? "Pindahkan transaksi kategori" : `${id ? "Ubah" : "Tambah"} ${labels[kind]}`;
 
   return <><p className="eyebrow">Finance Tracker</p><h2 id="editor-title">{title}</h2>
     {kind === "account" && <ActionForm action={saveAccount} onSaved={onSaved} submit={id ? "Simpan perubahan" : "Tambah akun"}>
@@ -92,12 +124,15 @@ export function WorkspaceEditorForm({ editor, data, today, onSaved }: { editor: 
       <div className="form-pair"><Field label="Saldo awal (Rp)" name="openingBalance"><Input name="openingBalance" inputMode="numeric" pattern="[0-9]*" required defaultValue={account?.openingBalance ?? "0"} /></Field><Field label="Per tanggal" name="openingDate"><Input name="openingDate" type="date" required defaultValue={account?.openingDate ?? today} /></Field></div>
       {id && <p className="field-help">Mengubah saldo awal menghitung ulang saldo akun dari seluruh riwayat.</p>}
     </ActionForm>}
+    {kind === "correction" && <ActionForm action={correctAccountBalance} onSaved={onSaved} submit="Catat koreksi saldo"><CorrectionFields data={data} accountId={account?.id}/></ActionForm>}
     {kind === "category" && <ActionForm action={saveCategory} onSaved={onSaved} submit={id ? "Simpan perubahan" : "Tambah kategori"}>
       <input type="hidden" name="id" value={category?.id ?? ""} />
       <Field label="Nama kategori" name="name"><Input name="name" required minLength={2} maxLength={60} defaultValue={category?.name ?? ""} /></Field>
       <Field label="Jenis" name="kind"><Select name="kind" defaultValue={category?.kind ?? "EXPENSE"}><option value="EXPENSE">Pengeluaran</option><option value="INCOME">Pemasukan</option></Select></Field>
       <Field label="Kategori induk" name="parentId"><Select name="parentId" defaultValue={category?.parentId ?? ""}><option value="">Tidak ada</option>{data.categories.filter((item) => !item.parentId && !item.isArchived && item.id !== id).map((item) => <option key={item.id} value={item.id}>{item.name} ({item.kind === "EXPENSE" ? "pengeluaran" : "pemasukan"})</option>)}</Select></Field>
+      <fieldset className="ws-icon-picker"><legend>Ikon kategori</legend><div>{categoryIcons.map((item) => <label key={item.key}><input type="radio" name="icon" value={item.key} defaultChecked={(category?.icon ?? suggestedCategoryIcon(category?.name ?? "")) === item.key}/><span><FontAwesomeIcon icon={item.icon}/><small>{item.label}</small></span></label>)}</div></fieldset>
     </ActionForm>}
+    {kind === "moveCategory" && <ActionForm action={moveCategoryTransactions} onSaved={onSaved} submit="Pindahkan transaksi"><MoveCategoryFields data={data} initialSourceId={category?.id}/></ActionForm>}
     {kind === "transaction" && <ActionForm action={saveTransaction} onSaved={onSaved} submit={id ? "Simpan perubahan" : "Catat transaksi"}><TransactionFields data={data} item={transaction} today={today} /></ActionForm>}
     {kind === "budget" && <ActionForm action={saveBudget} onSaved={onSaved} submit={id ? "Simpan batas" : "Tambah batas"}>
       <input type="hidden" name="id" value={budget?.id ?? ""} />

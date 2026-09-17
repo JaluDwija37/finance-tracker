@@ -7,7 +7,7 @@ const base: WorkspaceData = {
     { id: "bank", name: "Bank", type: "BANK", openingBalance: "1000000", openingDate: "2026-08-01", isArchived: false },
     { id: "invest", name: "Investasi", type: "INVESTMENT_CASH", openingBalance: "0", openingDate: "2026-08-01", isArchived: false },
   ],
-  categories: [{ id: "food", name: "Makan", kind: "EXPENSE", parentId: null, isArchived: false }],
+  categories: [{ id: "food", name: "Makan", kind: "EXPENSE", parentId: null, icon: "utensils", isArchived: false }],
   transactions: [], budgets: [{ id: "limit", categoryId: "food", period: "CYCLE", amount: "100000" }], goals: [], contributions: [], recurring: [],
   assets: [{ id: "fund", name: "Reksa dana", symbol: null, assetType: "Fund", currency: "IDR", isArchived: false }],
   trades: [], prices: [], snapshots: [], imports: [], settings: { cycleStartDay: 25, currency: "IDR", timezone: "Asia/Jakarta" },

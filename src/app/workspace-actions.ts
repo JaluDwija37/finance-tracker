@@ -7,6 +7,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseRupiah } from "@/lib/money";
 import { jakartaToday } from "@/lib/finance";
+import { isCategoryIcon } from "@/lib/category-icons";
+import { getWorkspaceData } from "@/lib/workspace-data";
+import { accountBalances } from "@/lib/workspace-metrics";
 
 export type WorkspaceResult = { error: string; success: string };
 
@@ -34,6 +37,8 @@ function fail(error: unknown): WorkspaceResult {
 
 function done(message: string): WorkspaceResult {
   revalidatePath("/");
+  revalidatePath("/charts");
+  revalidatePath("/growth");
   return { error: "", success: message };
 }
 
@@ -80,11 +85,40 @@ export async function setAccountArchived(id: string, archived: boolean): Promise
   } catch (error) { return fail(error); }
 }
 
+const correctionFields = z.object({ accountId: idField, observedBalance: z.string().regex(/^-?(0|[1-9]\d*)$/), reason: z.string().trim().min(5).max(250) });
+
+export async function correctAccountBalance(_previous: WorkspaceResult, form: FormData): Promise<WorkspaceResult> {
+  try {
+    const userId = await ownerId();
+    const parsed = correctionFields.safeParse(Object.fromEntries(form));
+    if (!parsed.success) throw new InputError("Isi saldo nyata dan alasan koreksi minimal 5 karakter.");
+    const { accountId, observedBalance, reason } = parsed.data;
+    const data = await getWorkspaceData(userId);
+    const account = data.accounts.find((item) => item.id === accountId && !item.isArchived);
+    if (!account) throw new InputError("Akun aktif tidak ditemukan.");
+    const calculated = accountBalances(data).get(accountId) ?? 0n;
+    const observed = BigInt(observedBalance);
+    const difference = observed - calculated;
+    if (difference === 0n) return { error: "", success: "Saldo akun sudah sesuai. Tidak ada transaksi baru." };
+    const today = jakartaToday();
+    await prisma.$transaction(async (db) => {
+      const transaction = await db.transaction.create({ data: {
+        userId, accountId, type: "ADJUSTMENT", amount: difference < 0n ? -difference : difference,
+        adjustmentDirection: difference > 0n ? "INCREASE" : "DECREASE",
+        transactionDate: dateValue(today), note: `Koreksi saldo: ${reason}`, status: "POSTED", source: "MANUAL",
+      } });
+      await db.auditLog.create({ data: { userId, action: "CORRECT_BALANCE", entity: "Transaction", entityId: transaction.id, changes: { accountId, before: calculated.toString(), observed: observed.toString(), difference: difference.toString() } } });
+    });
+    return done(`Koreksi ${difference > 0n ? "menambah" : "mengurangi"} saldo Rp${(difference < 0n ? -difference : difference).toLocaleString("id-ID")}. Lihat di Transaksi.`);
+  } catch (error) { return fail(error); }
+}
+
 const categoryFields = z.object({
   id: optionalId,
   name: z.string().trim().min(2).max(60),
   kind: z.enum(["INCOME", "EXPENSE"]),
   parentId: optionalId,
+  icon: z.string().trim().max(40).optional(),
 });
 
 export async function saveCategory(_previous: WorkspaceResult, form: FormData): Promise<WorkspaceResult> {
@@ -93,6 +127,7 @@ export async function saveCategory(_previous: WorkspaceResult, form: FormData): 
     const parsed = categoryFields.safeParse(Object.fromEntries(form));
     if (!parsed.success) throw new InputError("Periksa nama, jenis, dan kategori induk.");
     const value = parsed.data;
+    if (value.icon && !isCategoryIcon(value.icon)) throw new InputError("Ikon kategori tidak tersedia.");
     const parentId = value.parentId || null;
     if (value.id === parentId) throw new InputError("Kategori tidak bisa menjadi induknya sendiri.");
     await prisma.$transaction(async (db) => {
@@ -115,10 +150,10 @@ export async function saveCategory(_previous: WorkspaceResult, form: FormData): 
           if (transactions || budgets || recurring || children) throw new InputError("Jenis kategori yang sudah dipakai tidak dapat diubah.");
         }
         if (parentId && await db.category.count({ where: { userId, parentId: value.id } })) throw new InputError("Kategori dengan subkategori tidak bisa dipindah ke induk lain.");
-        await db.category.update({ where: { id: value.id }, data: { name: value.name, kind: value.kind, parentId } });
+        await db.category.update({ where: { id: value.id }, data: { name: value.name, kind: value.kind, parentId, icon: value.icon || null } });
         await db.auditLog.create({ data: { userId, action: "UPDATE", entity: "Category", entityId: value.id, changes: { name: value.name, kind: value.kind } } });
       } else {
-        const category = await db.category.create({ data: { userId, name: value.name, kind: value.kind, parentId } });
+        const category = await db.category.create({ data: { userId, name: value.name, kind: value.kind, parentId, icon: value.icon || null } });
         await db.auditLog.create({ data: { userId, action: "CREATE", entity: "Category", entityId: category.id } });
       }
     });
@@ -137,6 +172,27 @@ export async function setCategoryArchived(id: string, archived: boolean): Promis
       prisma.auditLog.create({ data: { userId, action: archived ? "ARCHIVE" : "RESTORE", entity: "Category", entityId: id } }),
     ]);
     return done(archived ? "Kategori diarsipkan. Riwayat tetap ada." : "Kategori dipulihkan.");
+  } catch (error) { return fail(error); }
+}
+
+const moveCategoryFields = z.object({ sourceId: idField, destinationId: idField });
+
+export async function moveCategoryTransactions(_previous: WorkspaceResult, form: FormData): Promise<WorkspaceResult> {
+  try {
+    const userId = await ownerId();
+    const parsed = moveCategoryFields.safeParse(Object.fromEntries(form));
+    if (!parsed.success || parsed.data.sourceId === parsed.data.destinationId) throw new InputError("Pilih dua kategori yang berbeda.");
+    const { sourceId, destinationId } = parsed.data;
+    const result = await prisma.$transaction(async (db) => {
+      const categories = await db.category.findMany({ where: { userId, id: { in: [sourceId, destinationId] } } });
+      const source = categories.find((item) => item.id === sourceId);
+      const destination = categories.find((item) => item.id === destinationId);
+      if (!source || !destination || destination.isArchived || source.kind !== destination.kind) throw new InputError("Kategori asal dan tujuan harus sejenis, dan tujuan harus aktif.");
+      const moved = await db.transaction.updateMany({ where: { userId, categoryId: sourceId, type: source.kind }, data: { categoryId: destinationId } });
+      await db.auditLog.create({ data: { userId, action: "MOVE_CATEGORY_TRANSACTIONS", entity: "Category", entityId: sourceId, changes: { destinationId, moved: moved.count } } });
+      return moved.count;
+    });
+    return done(`${result} transaksi dipindahkan. Nominal dan saldo akun tidak berubah.`);
   } catch (error) { return fail(error); }
 }
 
