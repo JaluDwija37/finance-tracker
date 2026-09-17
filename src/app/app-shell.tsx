@@ -27,13 +27,13 @@ function Navigation({ active, className }: { active: string; className: string }
 export function AppShell({ active, children }: { active: string; children: React.ReactNode }) {
   return <div className="app-shell">
     <aside className="app-sidebar">
-      <Link className="wordmark" href="/" aria-label="Finance Tracker, beranda">FINANCE<span>TRACKER</span><i>.</i></Link>
+      <Link className="wordmark" href="/" aria-label="Finance Tracker, beranda">Finance Tracker</Link>
       <p className="sidebar-caption">UANG, TANPA TEBAK TEBAKAN</p>
       <Navigation active={active} className="desktop-nav" />
       <div className="sidebar-foot"><LogoutButton /></div>
     </aside>
     <div className="app-content">
-      <header className="app-header"><Link className="wordmark" href="/" aria-label="Finance Tracker, beranda">FINANCE<span>TRACKER</span><i>.</i></Link><LogoutButton /></header>
+      <header className="app-header"><Link className="wordmark" href="/" aria-label="Finance Tracker, beranda">Finance Tracker</Link><LogoutButton /></header>
       <main className="app-main">{children}</main>
     </div>
     <Navigation active={active} className="mobile-nav" />

@@ -9,7 +9,7 @@ export default async function LoginPage() {
   return (
     <main className="login-shell">
       <section className="login-editorial" aria-label="Finance Tracker">
-        <span className="wordmark">FINANCE<span>TRACKER</span><i>.</i></span>
+        <span className="wordmark">Finance Tracker</span>
         <h2>Semua uangmu.<br /><span>Dalam satu pandangan.</span></h2>
         <p>Catat yang masuk, yang keluar, dan yang berpindah. Lihat posisi keuanganmu dari angka yang kamu masukkan sendiri.</p>
       </section>
