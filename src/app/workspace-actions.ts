@@ -188,11 +188,12 @@ export async function moveCategoryTransactions(_previous: WorkspaceResult, form:
       const source = categories.find((item) => item.id === sourceId);
       const destination = categories.find((item) => item.id === destinationId);
       if (!source || !destination || destination.isArchived || source.kind !== destination.kind) throw new InputError("Kategori asal dan tujuan harus sejenis, dan tujuan harus aktif.");
+      if (!await db.transaction.count({ where: { userId, categoryId: sourceId, type: source.kind } })) return 0;
       const moved = await db.transaction.updateMany({ where: { userId, categoryId: sourceId, type: source.kind }, data: { categoryId: destinationId } });
       await db.auditLog.create({ data: { userId, action: "MOVE_CATEGORY_TRANSACTIONS", entity: "Category", entityId: sourceId, changes: { destinationId, moved: moved.count } } });
       return moved.count;
     });
-    return done(`${result} transaksi dipindahkan. Nominal dan saldo akun tidak berubah.`);
+    return done(result ? `${result} transaksi dipindahkan. Nominal dan saldo akun tidak berubah.` : "Kategori asal belum memiliki transaksi. Tidak ada yang dipindahkan.");
   } catch (error) { return fail(error); }
 }
 

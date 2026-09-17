@@ -55,11 +55,17 @@ Backup: `docker compose exec -T db pg_dump -U finance -d finance_tracker -Fc > f
 
 Workspace utama berada di `/` dan dirender di server pada permintaan awal. Navigasi bawah di ponsel atau sidebar di desktop berpindah antar panel tanpa reload. Tautan lama `/accounts`, `/transactions`, `/budgets`, dan `/import` mengarah ke panel yang sesuai.
 
+Chart (`/charts`) dan Pertumbuhan (`/growth`) adalah halaman laporan tersendiri yang juga dirender di server. Keduanya tersedia dari sidebar desktop dan menu **Lainnya → Laporan** pada ponsel.
+
 - **Transaksi:** buat, ubah, cari, saring, batalkan, dan pulihkan pemasukan, pengeluaran, transfer, serta koreksi saldo. Pembatalan mempertahankan riwayat audit dan menghitung ulang saldo.
+- **Koreksi akun:** buka **Lainnya → Akun → Koreksi saldo**, masukkan saldo nyata dan alasan. Selisih disimpan sebagai transaksi `ADJUSTMENT`, sehingga riwayat sebelumnya tetap ada.
+- **Kategori:** pilih ikon Font Awesome saat menambah atau mengubah kategori. **Pindahkan transaksi** memindahkan seluruh transaksi kategori asal ke kategori tujuan yang sejenis; nominal, saldo, budget, dan jadwal tetap tidak diubah.
 - **Budget:** batas harian, bulanan, siklus gajian, dan tahunan. Periode memakai transaksi nyata dari kategori yang sama.
 - **Target:** buat target tabungan dan tautkan transfer yang sudah terjadi sebagai kontribusi. Menautkan transfer tidak menggandakan saldo.
 - **Investasi:** catat aset, pembelian, penjualan, dividen, biaya, dan harga manual. Nilai tanpa harga memakai modal tersisa. Penjualan yang melebihi unit pada tanggal transaksi ditolak.
 - **Lainnya:** kelola akun, kategori, jadwal tetap, laporan siklus, pemeriksaan saldo, impor/ekspor, dan tanggal awal siklus. Jadwal tetap membuat draft yang perlu dikonfirmasi sebelum memengaruhi saldo.
 - **Ekspor:** unduh CSV transaksi atau JSON semua catatan melalui Lainnya → Impor & ekspor. File JSON adalah arsip data, belum tersedia impor ulang dari JSON.
+- **Chart:** bandingkan pemasukan, pengeluaran, rasio pengeluaran terhadap pemasukan, dan porsi kategori untuk 6 atau 12 bulan. Transfer dan koreksi saldo dikecualikan dari arus uang.
+- **Pertumbuhan:** lihat nilai kekayaan tiap akhir bulan dari saldo akun dan investasi. Harga aset memakai snapshot terakhir yang tersedia saat itu; tanpa harga, nilai memakai modal tersisa. Perubahan lain mencakup koreksi, harga aset, dan saldo awal akun baru.
 
 Perubahan skema dijalankan saat container dimulai. Setelah mengubah `prisma/schema.prisma` dalam mode dev, restart service `app` supaya Prisma Client diperbarui. Verifikasi: `pnpm lint`, `pnpm typecheck`, `pnpm test`, dan `pnpm build`.

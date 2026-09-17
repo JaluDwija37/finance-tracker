@@ -25,7 +25,7 @@ async function ownerId() {
   if (!session) throw new InputError("Sesi berakhir. Masuk kembali.");
   return session.user.id;
 }
-function done(success: string): WorkspaceResult { revalidatePath("/"); return { error: "", success }; }
+function done(success: string): WorkspaceResult { revalidatePath("/"); revalidatePath("/charts"); revalidatePath("/growth"); return { error: "", success }; }
 function fail(error: unknown): WorkspaceResult { return { error: error instanceof InputError ? error.message : "Perubahan gagal disimpan. Coba lagi.", success: "" }; }
 function asDate(value: string) { return new Date(`${value}T00:00:00Z`); }
 

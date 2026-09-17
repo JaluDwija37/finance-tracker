@@ -16,3 +16,6 @@ Design Read: aplikasi keuangan pribadi untuk satu pemilik, dengan bahasa visual 
 - Alur yang mengubah histori finansial memakai pembatalan atau arsip, sehingga audit dan saldo bisa dihitung ulang. Budget, harga aset, tautan kontribusi, dan snapshot dapat dihapus karena data sumbernya tetap terjaga.
 - Ikon kategori memakai pilihan Font Awesome yang terbatas dan relevan dengan nama kategori, sehingga daftar transaksi lebih mudah dipindai tanpa menjadikan setiap kartu dekorasi warna berbeda. Identitas teks Finance Tracker tetap tanpa logo.
 - Koreksi saldo memakai saldo nyata sebagai masukan, lalu memperlihatkan selisih sebelum disimpan sebagai transaksi. Ini mengurangi risiko salah memilih arah atau menghitung nominal koreksi secara manual.
+- Chart memakai pasangan batang horizontal per bulan agar angka masuk dan keluar tetap terbaca pada ponsel sempit. Persentase berasal dari pengeluaran dibagi pemasukan; jika pemasukan nol, teks menjelaskan bahwa rasio belum ada.
+- Pertumbuhan memakai satu garis nilai kekayaan sebagai fokus. Rincian di desktop berupa tabel, sementara ponsel memecah tiap bulan menjadi blok dua kolom agar semua angka terlihat tanpa geser samping.
+- Sidebar desktop memberi akses tetap ke Chart dan Pertumbuhan tanpa memperpanjang navigasi bawah ponsel. Di ponsel, kedua halaman tersedia lewat Lainnya dan menu halaman laporan.
