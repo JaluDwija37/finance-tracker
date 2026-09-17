@@ -1,0 +1,417 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  settings      UserSettings?
+  financialAccounts FinancialAccount[]
+  categories    Category[]
+  transactions  Transaction[]
+  budgetPlans   BudgetPlan[]
+  budgetAllocations BudgetAllocation[]
+  budgetLimits BudgetLimit[]
+  recurringRules RecurringRule[]
+  savingsGoals  SavingsGoal[]
+  goalContributions GoalContribution[]
+  investmentAssets InvestmentAsset[]
+  investmentTransactions InvestmentTransaction[]
+  investmentPrices InvestmentPriceSnapshot[]
+  balanceSnapshots BalanceSnapshot[]
+  importBatches ImportBatch[]
+  importRows ImportRow[]
+  auditLogs AuditLog[]
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String @id
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([identifier])
+  @@map("verification")
+}
+
+model UserSettings {
+  userId String @id
+  currency String @default("IDR")
+  timezone String @default("Asia/Jakarta")
+  cycleStartDay Int @default(25)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum FinancialAccountType {
+  CASH
+  BANK
+  EWALLET
+  INVESTMENT_CASH
+  OTHER_ASSET
+}
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  ADJUSTMENT
+}
+enum TransactionStatus {
+  DRAFT
+  POSTED
+  VOID
+}
+enum TransactionSource {
+  MANUAL
+  RECURRING
+  IMPORT
+  SYSTEM
+}
+enum AdjustmentDirection {
+  INCREASE
+  DECREASE
+}
+enum RolloverPolicy {
+  NONE
+  CARRY_POSITIVE
+}
+enum BudgetPeriod {
+  DAY
+  MONTH
+  CYCLE
+  YEAR
+}
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+enum InvestmentType {
+  BUY
+  SELL
+  DIVIDEND
+  FEE
+}
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  FAILED
+}
+
+model FinancialAccount {
+  id String @id @default(cuid())
+  userId String
+  name String
+  type FinancialAccountType
+  currency String @default("IDR")
+  openingBalance BigInt @default(0)
+  openingDate DateTime @db.Date
+  isArchived Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  outgoingTransactions Transaction[] @relation("SourceAccount")
+  incomingTransfers Transaction[] @relation("DestinationAccount")
+  recurringRules RecurringRule[] @relation("RecurringAccount")
+  recurringDestinations RecurringRule[] @relation("RecurringDestination")
+  savingsGoals SavingsGoal[]
+  investmentTransactions InvestmentTransaction[]
+  snapshots BalanceSnapshot[]
+  @@unique([userId, name])
+  @@index([userId, isArchived])
+}
+
+model Category {
+  id String @id @default(cuid())
+  userId String
+  name String
+  kind CategoryKind
+  parentId String?
+  icon String?
+  color String?
+  isArchived Boolean @default(false)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  parent Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  transactions Transaction[]
+  allocations BudgetAllocation[]
+  budgetLimits BudgetLimit[]
+  recurringRules RecurringRule[]
+  @@unique([userId, kind, parentId, name])
+  @@index([userId, kind, isArchived])
+}
+
+model Transaction {
+  id String @id @default(cuid())
+  userId String
+  type TransactionType
+  amount BigInt
+  transactionDate DateTime @db.Date
+  accountId String
+  destinationAccountId String?
+  categoryId String?
+  adjustmentDirection AdjustmentDirection?
+  note String?
+  status TransactionStatus @default(POSTED)
+  source TransactionSource @default(MANUAL)
+  externalId String?
+  importBatchId String?
+  recurringOccurrenceDate DateTime? @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account FinancialAccount @relation("SourceAccount", fields: [accountId], references: [id])
+  destinationAccount FinancialAccount? @relation("DestinationAccount", fields: [destinationAccountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id])
+  goalContributions GoalContribution[]
+  @@index([userId, transactionDate, status])
+  @@unique([userId, source, externalId])
+}
+
+model BudgetPlan {
+  id String @id @default(cuid())
+  userId String
+  name String
+  cycleStartDay Int @default(25)
+  currency String @default("IDR")
+  active Boolean @default(true)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  allocations BudgetAllocation[]
+  @@index([userId, active])
+}
+
+model BudgetAllocation {
+  id String @id @default(cuid())
+  userId String
+  planId String
+  categoryId String
+  cycleStart DateTime @db.Date
+  amount BigInt
+  rolloverPolicy RolloverPolicy @default(NONE)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan BudgetPlan @relation(fields: [planId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  @@unique([planId, categoryId, cycleStart])
+  @@index([userId, cycleStart])
+}
+
+model BudgetLimit {
+  id String @id @default(cuid())
+  userId String
+  categoryId String
+  period BudgetPeriod
+  amount BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  @@unique([userId, categoryId, period])
+  @@index([userId, period])
+}
+
+model RecurringRule {
+  id String @id @default(cuid())
+  userId String
+  type TransactionType
+  amount BigInt
+  accountId String
+  destinationAccountId String?
+  categoryId String?
+  dueDay Int
+  cadenceMonths Int @default(1)
+  startDate DateTime @db.Date
+  endDate DateTime? @db.Date
+  nextDueDate DateTime @db.Date
+  active Boolean @default(true)
+  note String?
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account FinancialAccount @relation("RecurringAccount", fields: [accountId], references: [id])
+  destinationAccount FinancialAccount? @relation("RecurringDestination", fields: [destinationAccountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+}
+
+model SavingsGoal {
+  id String @id @default(cuid())
+  userId String
+  name String
+  targetAmount BigInt
+  targetDate DateTime? @db.Date
+  linkedAccountId String?
+  priority Int @default(0)
+  status GoalStatus @default(ACTIVE)
+  isArchived Boolean @default(false)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  linkedAccount FinancialAccount? @relation(fields: [linkedAccountId], references: [id])
+  contributions GoalContribution[]
+}
+
+model GoalContribution {
+  id String @id @default(cuid())
+  userId String
+  goalId String
+  transactionId String
+  amount BigInt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  goal SavingsGoal @relation(fields: [goalId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  @@unique([goalId, transactionId])
+  @@index([userId])
+}
+
+model InvestmentAsset {
+  id String @id @default(cuid())
+  userId String
+  name String
+  symbol String?
+  assetType String
+  currency String @default("IDR")
+  isArchived Boolean @default(false)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions InvestmentTransaction[]
+  prices InvestmentPriceSnapshot[]
+  @@index([userId, name])
+}
+
+model InvestmentTransaction {
+  id String @id @default(cuid())
+  userId String
+  accountId String
+  assetId String
+  type InvestmentType
+  quantity Decimal @db.Decimal(24, 8)
+  unitPrice Decimal @db.Decimal(24, 8)
+  totalAmount BigInt
+  transactionDate DateTime @db.Date
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account FinancialAccount @relation(fields: [accountId], references: [id])
+  asset InvestmentAsset @relation(fields: [assetId], references: [id])
+  @@index([userId, transactionDate])
+}
+
+model InvestmentPriceSnapshot {
+  id String @id @default(cuid())
+  userId String
+  assetId String
+  date DateTime @db.Date
+  price Decimal @db.Decimal(24, 8)
+  source String @default("MANUAL")
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  asset InvestmentAsset @relation(fields: [assetId], references: [id])
+  @@unique([assetId, date])
+}
+
+model BalanceSnapshot {
+  id String @id @default(cuid())
+  userId String
+  accountId String
+  date DateTime @db.Date
+  observedBalance BigInt
+  calculatedBalance BigInt
+  difference BigInt
+  note String?
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  account FinancialAccount @relation(fields: [accountId], references: [id])
+  @@unique([accountId, date])
+}
+
+model ImportBatch {
+  id String @id @default(cuid())
+  userId String
+  filename String
+  status ImportStatus @default(PREVIEW)
+  rowCount Int @default(0)
+  validCount Int @default(0)
+  invalidCount Int @default(0)
+  fingerprint String
+  errorMessage String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  rows ImportRow[]
+  transactions Transaction[]
+  @@unique([userId, fingerprint])
+}
+
+model ImportRow {
+  id String @id @default(cuid())
+  userId String
+  batchId String
+  rowNumber Int
+  fingerprint String
+  raw Json
+  mapped Json?
+  errorMessage String?
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  batch ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  @@unique([batchId, rowNumber])
+  @@unique([batchId, fingerprint])
+  @@index([userId])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  userId String
+  action String
+  entity String
+  entityId String
+  changes Json?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([userId, createdAt])
+}

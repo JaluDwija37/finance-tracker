@@ -1,0 +1,27 @@
+export type AccountView = { id: string; name: string; type: "CASH" | "BANK" | "EWALLET" | "INVESTMENT_CASH" | "OTHER_ASSET"; openingBalance: string; openingDate: string; isArchived: boolean };
+export type CategoryView = { id: string; name: string; kind: "INCOME" | "EXPENSE"; parentId: string | null; isArchived: boolean };
+export type TransactionView = { id: string; type: "INCOME" | "EXPENSE" | "TRANSFER" | "ADJUSTMENT"; amount: string; date: string; accountId: string; destinationAccountId: string | null; categoryId: string | null; adjustmentDirection: "INCREASE" | "DECREASE" | null; note: string | null; status: "DRAFT" | "POSTED" | "VOID"; source: "MANUAL" | "RECURRING" | "IMPORT" | "SYSTEM" };
+export type BudgetView = { id: string; categoryId: string; period: "DAY" | "MONTH" | "CYCLE" | "YEAR"; amount: string };
+export type GoalView = { id: string; name: string; targetAmount: string; targetDate: string | null; linkedAccountId: string | null; priority: number; status: "ACTIVE" | "COMPLETED" | "PAUSED"; isArchived: boolean };
+export type ContributionView = { id: string; goalId: string; transactionId: string; amount: string };
+export type RecurringView = { id: string; type: "INCOME" | "EXPENSE" | "TRANSFER" | "ADJUSTMENT"; amount: string; accountId: string; destinationAccountId: string | null; categoryId: string | null; dueDay: number; cadenceMonths: number; startDate: string; endDate: string | null; nextDueDate: string; active: boolean; note: string | null };
+export type AssetView = { id: string; name: string; symbol: string | null; assetType: string; currency: string; isArchived: boolean };
+export type TradeView = { id: string; accountId: string; assetId: string; type: "BUY" | "SELL" | "DIVIDEND" | "FEE"; quantity: string; unitPrice: string; totalAmount: string; date: string; deletedAt: string | null };
+export type PriceView = { id: string; assetId: string; date: string; price: string };
+export type SnapshotView = { id: string; accountId: string; date: string; observedBalance: string; calculatedBalance: string; difference: string; note: string | null };
+export type ImportView = { id: string; filename: string; rowCount: number; createdAt: string };
+export type WorkspaceData = {
+  accounts: AccountView[];
+  categories: CategoryView[];
+  transactions: TransactionView[];
+  budgets: BudgetView[];
+  goals: GoalView[];
+  contributions: ContributionView[];
+  recurring: RecurringView[];
+  assets: AssetView[];
+  trades: TradeView[];
+  prices: PriceView[];
+  snapshots: SnapshotView[];
+  imports: ImportView[];
+  settings: { cycleStartDay: number; currency: string; timezone: string };
+};
