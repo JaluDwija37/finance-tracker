@@ -57,7 +57,7 @@ Workspace utama berada di `/` dan dirender di server pada permintaan awal. Navig
 
 Chart (`/charts`) dan Pertumbuhan (`/growth`) adalah halaman laporan tersendiri yang juga dirender di server. Keduanya tersedia dari sidebar desktop dan menu **Lainnya → Laporan** pada ponsel.
 
-- **Transaksi:** buat, ubah, cari, saring, batalkan, dan pulihkan pemasukan, pengeluaran, transfer, serta koreksi saldo. Pembatalan mempertahankan riwayat audit dan menghitung ulang saldo.
+- **Transaksi:** buat, ubah, cari, saring, batalkan, dan pulihkan pemasukan, pengeluaran, transfer, serta koreksi saldo. Daftar membuka bulan berjalan, menampilkan 30 transaksi per tahap, dan punya pilihan semua periode. Buka transaksi untuk membatalkan, memulihkan, atau mengonfirmasi draft; pembatalan mempertahankan riwayat audit dan menghitung ulang saldo.
 - **Koreksi akun:** buka **Lainnya → Akun → Koreksi saldo**, masukkan saldo nyata dan alasan. Selisih disimpan sebagai transaksi `ADJUSTMENT`, sehingga riwayat sebelumnya tetap ada.
 - **Kategori:** pilih ikon Font Awesome saat menambah atau mengubah kategori. **Pindahkan transaksi** memindahkan seluruh transaksi kategori asal ke kategori tujuan yang sejenis; nominal, saldo, budget, dan jadwal tetap tidak diubah.
 - **Budget:** batas harian, bulanan, siklus gajian, dan tahunan. Periode memakai transaksi nyata dari kategori yang sama.
@@ -66,6 +66,6 @@ Chart (`/charts`) dan Pertumbuhan (`/growth`) adalah halaman laporan tersendiri 
 - **Lainnya:** kelola akun, kategori, jadwal tetap, laporan siklus, pemeriksaan saldo, impor/ekspor, dan tanggal awal siklus. Jadwal tetap membuat draft yang perlu dikonfirmasi sebelum memengaruhi saldo.
 - **Ekspor:** unduh CSV transaksi atau JSON semua catatan melalui Lainnya → Impor & ekspor. File JSON adalah arsip data, belum tersedia impor ulang dari JSON.
 - **Chart:** bandingkan pemasukan, pengeluaran, rasio pengeluaran terhadap pemasukan, dan porsi kategori untuk 6 atau 12 bulan. Transfer dan koreksi saldo dikecualikan dari arus uang.
-- **Pertumbuhan:** lihat nilai kekayaan tiap akhir bulan dari saldo akun dan investasi. Harga aset memakai snapshot terakhir yang tersedia saat itu; tanpa harga, nilai memakai modal tersisa. Perubahan lain mencakup koreksi, harga aset, dan saldo awal akun baru.
+- **Pertumbuhan:** lihat total aset tercatat tiap akhir bulan dari saldo akun dan investasi. Harga aset memakai snapshot terakhir yang tersedia saat itu; tanpa harga, nilai memakai modal tersisa. Perubahan lain mencakup koreksi, harga aset, dan saldo awal akun baru.
 
 Perubahan skema dijalankan saat container dimulai. Setelah mengubah `prisma/schema.prisma` dalam mode dev, restart service `app` supaya Prisma Client diperbarui. Verifikasi: `pnpm lint`, `pnpm typecheck`, `pnpm test`, dan `pnpm build`.

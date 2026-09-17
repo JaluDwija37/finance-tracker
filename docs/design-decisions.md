@@ -19,3 +19,9 @@ Design Read: aplikasi keuangan pribadi untuk satu pemilik, dengan bahasa visual 
 - Chart memakai pasangan batang horizontal per bulan agar angka masuk dan keluar tetap terbaca pada ponsel sempit. Persentase berasal dari pengeluaran dibagi pemasukan; jika pemasukan nol, teks menjelaskan bahwa rasio belum ada.
 - Pertumbuhan memakai satu garis nilai kekayaan sebagai fokus. Rincian di desktop berupa tabel, sementara ponsel memecah tiap bulan menjadi blok dua kolom agar semua angka terlihat tanpa geser samping.
 - Sidebar desktop memberi akses tetap ke Chart dan Pertumbuhan tanpa memperpanjang navigasi bawah ponsel. Di ponsel, kedua halaman tersedia lewat Lainnya dan menu halaman laporan.
+- Baris data memakai area sentuh 44 piksel yang mencakup judul dan rincian; aksi lain tetap tombol tersendiri agar tap tidak salah sasaran.
+- Aksi catat transaksi berada di header ponsel dan tombol halaman Transaksi. Tombol melayang dihapus karena menutup nominal dan aksi pada baris yang digulir.
+- Transaksi membuka bulan berjalan, menampilkan 30 baris per tahap, dan menaruh filter lanjutan dalam panel yang bisa dibuka. Pilihan semua periode tetap terlihat agar riwayat lama mudah dicari.
+- Lainnya membuka indeks tujuan vertikal. Satu layar detail dibuka setelah pengguna memilih tujuan, dengan tombol kembali yang jelas; sidebar detail tetap tersedia pada layar lebar.
+- Chart dan Pertumbuhan berbagi ikon navigasi workspace, tautan kembali ke Laporan, dan pemilih antar laporan. Ini menjaga konteks saat laporan SSR dibuka dari aplikasi utama.
+- Istilah “total aset tercatat” dipakai di Beranda dan Pertumbuhan karena perhitungan saat ini menjumlah saldo akun dan nilai investasi, tanpa model utang.
