@@ -258,6 +258,17 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-budget-line span { color: var(--secondary); }
 .ws-budget-line p { margin: 10px 0; font-weight: 650; }
 .ws-budget-line small, .ws-card-number small { color: var(--secondary); font-weight: 400; }
+.ws-budget-totals { border-top: 1px solid var(--line); }
+.ws-budget-total { padding: 17px 0; border-bottom: 1px solid var(--line); }
+.ws-budget-total-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 14px; margin-bottom: 14px; }
+.ws-budget-total-heading strong { font-size: 14px; }
+.ws-budget-total-heading small { color: var(--secondary); font-size: 11px; text-align: right; }
+.ws-budget-total dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 0; }
+.ws-budget-total dl > div { min-width: 0; }
+.ws-budget-total dt { margin-bottom: 5px; color: var(--secondary); font-size: 11px; }
+.ws-budget-total dd { margin: 0; font-size: clamp(15px, 2vw, 20px); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ws-budget-total dl > div:last-child { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ws-budget-total dl > div:last-child dt { margin: 0; }
 .ws-progress { height: 7px; overflow: hidden; border-radius: 99px; background: #363b40; }
 .ws-progress span { display: block; height: 100%; border-radius: inherit; background: var(--signal); }
 .ws-progress span.complete { background: var(--loss); }

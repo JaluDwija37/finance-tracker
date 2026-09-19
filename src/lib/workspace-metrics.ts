@@ -86,6 +86,16 @@ export function budgetProgress(data: WorkspaceData, today: string) {
   });
 }
 
+export function budgetTotals(progress: ReturnType<typeof budgetProgress>) {
+  const periods = ["DAY", "MONTH", "CYCLE", "YEAR"] as const;
+  return periods.map((period) => {
+    const items = progress.filter((item) => item.period === period);
+    const allowed = items.reduce((sum, item) => sum + BigInt(item.amount), 0n);
+    const spent = items.reduce((sum, item) => sum + item.spent, 0n);
+    return { period, count: items.length, allowed, spent, remaining: allowed - spent, start: items[0]?.start, end: items[0]?.end };
+  }).filter((item) => item.count > 0);
+}
+
 export function fundedFor(data: WorkspaceData, goalId: string): bigint {
   const postedIds = new Set(data.transactions.filter(posted).map((transaction) => transaction.id));
   return data.contributions.reduce((sum, item) => sum + (item.goalId === goalId && postedIds.has(item.transactionId) ? BigInt(item.amount) : 0n), 0n);

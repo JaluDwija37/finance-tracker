@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountBalances, budgetProgress, cycleSummary, fundedFor, portfolioFor } from "./workspace-metrics";
+import { accountBalances, budgetProgress, budgetTotals, cycleSummary, fundedFor, portfolioFor } from "./workspace-metrics";
 import type { WorkspaceData, TransactionView } from "./workspace-types";
 
 const base: WorkspaceData = {
@@ -24,6 +24,20 @@ describe("workspace financial totals", () => {
     expect(balances.get("invest")).toBe(300000n);
     expect(cycleSummary(data, "2026-09-17")).toMatchObject({ income: 0n, expense: 43000n, net: -43000n });
     expect(budgetProgress(data, "2026-09-17")[0]).toMatchObject({ spent: 43000n, remaining: 57000n, percent: 43 });
+  });
+
+  it("totals budget limits within each period without mixing overlapping windows", () => {
+    const data: WorkspaceData = { ...base,
+      budgets: [
+        { id: "daily", categoryId: "food", period: "DAY", amount: "50000" },
+        { id: "cycle", categoryId: "food", period: "CYCLE", amount: "100000" },
+      ],
+      transactions: [transaction("food", "EXPENSE", "43000"), { ...transaction("draft", "EXPENSE", "10000"), status: "DRAFT" }],
+    };
+    expect(budgetTotals(budgetProgress(data, "2026-09-14"))).toMatchObject([
+      { period: "DAY", allowed: 50000n, spent: 43000n, remaining: 7000n },
+      { period: "CYCLE", allowed: 100000n, spent: 43000n, remaining: 57000n },
+    ]);
   });
 
   it("counts investment cash and holdings once, using manual price when available", () => {
