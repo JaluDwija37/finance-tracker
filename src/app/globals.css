@@ -281,6 +281,11 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-month-control { display: flex; gap: 8px; }
 .ws-month-control input { min-width: 0; flex: 1; }
 .ws-month-control .ws-ghost { flex: none; }
+.ws-month-control select { min-width: 0; flex: 1; }
+.ws-transaction-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--line); }
+.ws-transaction-summary > div { min-width: 0; padding: 17px 20px; background: var(--surface); }
+.ws-transaction-summary span { display: block; color: var(--secondary); font-size: 12px; }
+.ws-transaction-summary strong { display: block; margin-top: 8px; font-size: clamp(17px, 2.3vw, 24px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .ws-filter-more { margin: -3px 0 21px; }
 .ws-filter-more summary { width: fit-content; min-height: 44px; display: flex; align-items: center; color: var(--signal); font-size: 13px; cursor: pointer; }
 .ws-filter-more .ws-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; margin: 8px 0 0; }
@@ -290,7 +295,8 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-list-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; color: var(--secondary); font-size: 12px; }
 .ws-list-heading label { margin-left: auto; display: flex; align-items: center; gap: 5px; }
 .ws-list-heading .ws-primary { margin-left: auto; }
-.ws-day-heading { margin-top: 24px; padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--secondary); font-size: 12px; font-weight: 600; }
+.ws-day-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 27px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--signal); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 650; }
+.ws-day-heading small { color: var(--secondary); font-size: 11px; font-weight: 400; text-transform: capitalize; }
 .ws-hint { margin: 14px 0; color: var(--secondary); font-size: 12px; line-height: 1.55; }
 .ws-category-tools { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 9px; }
 .ws-category-tools .ws-hint { max-width: 470px; margin: 0; }

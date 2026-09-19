@@ -12,6 +12,7 @@ import { ImportForm } from "./import/import-form";
 import { CategoryIcon } from "./category-icon";
 import { WorkspaceIcon as Icon } from "./workspace-icon";
 import { authClient } from "@/lib/auth-client";
+import { cycleForDate } from "@/lib/cycle";
 
 export type View = "home" | "transactions" | "budget" | "goals" | "more";
 type MoreSection = "overview" | "accounts" | "categories" | "recurring" | "reports" | "reconcile" | "import" | "settings";
@@ -106,20 +107,31 @@ function Transactions({ data, today, open, accountName, categoryName, transactio
   const [query, setQuery] = useState("");
   const [type, setType] = useState("ALL");
   const [accountId, setAccountId] = useState("ALL");
-  const [month, setMonth] = useState(today.slice(0, 7));
+  const currentCycle = cycleForDate(today, data.settings.cycleStartDay);
+  const [cycleStart, setCycleStart] = useState(currentCycle.start);
   const [showVoided, setShowVoided] = useState(false);
   const [visibleCount, setVisibleCount] = useState(30);
-  const filtered = data.transactions.filter((item) => (showVoided || item.status !== "VOID") && (type === "ALL" || item.type === type) && (accountId === "ALL" || item.accountId === accountId || item.destinationAccountId === accountId) && (!month || item.date.startsWith(month)) && `${transactionTitle(item)} ${categoryName(item.categoryId)} ${accountName(item.accountId)}`.toLowerCase().includes(query.toLowerCase()));
+  const cycleOptions = [...new Set([currentCycle.start, ...data.transactions.map((item) => cycleForDate(item.date, data.settings.cycleStartDay).start)])].sort().reverse();
+  const selectedCycle = cycleStart ? cycleForDate(cycleStart, data.settings.cycleStartDay) : null;
+  const filtered = data.transactions.filter((item) => (showVoided || item.status !== "VOID") && (type === "ALL" || item.type === type) && (accountId === "ALL" || item.accountId === accountId || item.destinationAccountId === accountId) && (!selectedCycle || item.date >= selectedCycle.start && item.date <= selectedCycle.end) && `${transactionTitle(item)} ${categoryName(item.categoryId)} ${accountName(item.accountId)}`.toLowerCase().includes(query.toLowerCase()));
   const visible = filtered.slice(0, visibleCount);
-  const drafts = data.transactions.filter((item) => item.status === "DRAFT" && (!month || item.date.startsWith(month)));
+  const drafts = filtered.filter((item) => item.status === "DRAFT");
+  const totals = filtered.reduce((sum, item) => {
+    if (item.status === "POSTED") {
+      if (item.type === "INCOME") sum.income += BigInt(item.amount);
+      if (item.type === "EXPENSE") sum.expense += BigInt(item.amount);
+    }
+    return sum;
+  }, { income: 0n, expense: 0n });
   const extraFilters = Number(type !== "ALL") + Number(accountId !== "ALL") + Number(showVoided);
   const resetCount = () => setVisibleCount(30);
   return <div className="ws-page">
     <div className="ws-page-intro"><p className="eyebrow">Catatan harian</p><h1>Transaksi.</h1><p>{data.transactions.filter((item) => item.status === "POSTED").length} transaksi tercatat</p></div>
     <div className="ws-toolbar ws-toolbar-primary">
       <div className="field"><label htmlFor="tx-search">Cari transaksi</label><input id="tx-search" type="search" placeholder="Catatan, kategori, akun" value={query} onChange={(event) => { setQuery(event.target.value); resetCount(); }}/></div>
-      <div className="field"><label htmlFor="tx-month">Bulan</label><div className="ws-month-control"><input id="tx-month" type="month" max={today.slice(0, 7)} value={month} onChange={(event) => { setMonth(event.target.value); resetCount(); }}/><button type="button" className="ws-ghost" onClick={() => { setMonth(month ? "" : today.slice(0, 7)); resetCount(); }}>{month ? "Semua periode" : "Bulan ini"}</button></div></div>
+      <div className="field"><label htmlFor="tx-cycle">Siklus bulanan</label><div className="ws-month-control"><select id="tx-cycle" value={cycleStart} onChange={(event) => { setCycleStart(event.target.value); resetCount(); }}><option value="">Semua periode</option>{cycleOptions.map((start) => { const cycle = cycleForDate(start, data.settings.cycleStartDay); return <option key={start} value={start}>{prettyDate(cycle.start)} – {prettyDate(cycle.end)}</option>; })}</select><button type="button" className="ws-ghost" onClick={() => { setCycleStart(cycleStart ? "" : currentCycle.start); resetCount(); }}>{cycleStart ? "Semua" : "Siklus ini"}</button></div></div>
     </div>
+    <div className="ws-transaction-summary" aria-label="Total transaksi sesuai filter"><div><span>Total pemasukan</span><strong className="positive">{money(totals.income)}</strong></div><div><span>Total pengeluaran</span><strong className="negative">{money(totals.expense)}</strong></div></div>
     <details className="ws-filter-more"><summary>Filter jenis, akun, dan status{extraFilters ? ` · ${extraFilters} aktif` : ""}</summary><div className="ws-toolbar">
       <div className="field"><label htmlFor="tx-type">Jenis</label><select id="tx-type" value={type} onChange={(event) => { setType(event.target.value); resetCount(); }}><option value="ALL">Semua jenis</option><option value="EXPENSE">Pengeluaran</option><option value="INCOME">Pemasukan</option><option value="TRANSFER">Transfer</option><option value="ADJUSTMENT">Koreksi</option></select></div>
       <div className="field"><label htmlFor="tx-account">Akun</label><select id="tx-account" value={accountId} onChange={(event) => { setAccountId(event.target.value); resetCount(); }}><option value="ALL">Semua akun</option>{data.accounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
@@ -127,7 +139,7 @@ function Transactions({ data, today, open, accountName, categoryName, transactio
     </div></details>
     <div className="ws-list-heading"><span>{filtered.length} hasil{filtered.length > visible.length ? ` · ${visible.length} tampil` : ""}</span><button className="ws-primary" type="button" onClick={() => open("transaction")}><Icon name="plus" size={18}/> Catat transaksi</button></div>
     {drafts.length > 0 && <p className="ws-hint">{drafts.length} draft menunggu konfirmasi. Buka transaksi untuk mengonfirmasi.</p>}
-    {visible.length ? <div className="ws-transaction-list">{visible.map((item, index) => <div key={item.id}>{(index === 0 || visible[index - 1].date !== item.date) && <div className="ws-day-heading">{prettyDate(item.date)}</div>}<Row title={transactionTitle(item)} subtitle={`${accountName(item.accountId)}${item.categoryId ? ` · ${categoryName(item.categoryId)}` : ""}${item.status !== "POSTED" ? ` · ${item.status === "DRAFT" ? "Draft" : "Dibatalkan"}` : ""}`} value={transactionAmount(item)} tone={item.type === "EXPENSE" ? "negative" : item.type === "INCOME" ? "positive" : ""} onClick={() => open("transaction", item.id)}/></div>)}</div> : <Empty title={month ? "Belum ada transaksi pada bulan ini" : "Tidak ada transaksi yang cocok"} detail="Ubah periode atau filter untuk melihat catatan lain." action={month ? <Ghost onClick={() => { setMonth(""); resetCount(); }}>Lihat semua periode</Ghost> : undefined}/>}
+    {visible.length ? <div className="ws-transaction-list">{visible.map((item, index) => <div key={item.id}>{(index === 0 || visible[index - 1].date !== item.date) && <div className="ws-day-heading"><span>{prettyDate(item.date)}</span><small>{new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" }).format(new Date(`${item.date}T00:00:00Z`))}</small></div>}<Row leading={item.categoryId ? <CategoryIcon icon={data.categories.find((category) => category.id === item.categoryId)?.icon ?? null} name={categoryName(item.categoryId)}/> : <span className="ws-category-icon" aria-hidden="true"><Icon name={item.type === "TRANSFER" ? "transfer" : "adjustment"} size={18}/></span>} title={transactionTitle(item)} subtitle={`${accountName(item.accountId)}${item.categoryId ? ` · ${categoryName(item.categoryId)}` : ""}${item.status !== "POSTED" ? ` · ${item.status === "DRAFT" ? "Draft" : "Dibatalkan"}` : ""}`} value={transactionAmount(item)} tone={item.type === "EXPENSE" ? "negative" : item.type === "INCOME" ? "positive" : ""} onClick={() => open("transaction", item.id)}/></div>)}</div> : <Empty title={cycleStart ? "Belum ada transaksi pada siklus ini" : "Tidak ada transaksi yang cocok"} detail="Ubah periode atau filter untuk melihat catatan lain." action={cycleStart ? <Ghost onClick={() => { setCycleStart(""); resetCount(); }}>Lihat semua periode</Ghost> : undefined}/>}
     {visible.length < filtered.length && <button className="ws-ghost ws-load-more" type="button" onClick={() => setVisibleCount((count) => count + 30)}>Tampilkan 30 transaksi lagi</button>}
   </div>;
 }
