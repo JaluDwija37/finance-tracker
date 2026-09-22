@@ -258,6 +258,7 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-budget-line span { color: var(--secondary); }
 .ws-budget-line p { margin: 10px 0; font-weight: 650; }
 .ws-budget-line small, .ws-card-number small { color: var(--secondary); font-weight: 400; }
+.ws-budget-line:hover strong, .ws-budget-line:focus-visible strong { color: var(--signal); }
 .ws-budget-totals { border-top: 1px solid var(--line); }
 .ws-budget-total { padding: 17px 0; border-bottom: 1px solid var(--line); }
 .ws-budget-total-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 14px; margin-bottom: 14px; }
@@ -282,6 +283,10 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-card h3 { margin: 18px 0 14px; font-size: 20px; letter-spacing: -.035em; }
 .ws-card-number { display: block; margin: 0 0 16px; font-size: clamp(19px, 3vw, 25px); letter-spacing: -.05em; overflow-wrap: anywhere; }
 .ws-card > p { margin: 12px 0 0; color: var(--secondary); font-size: 12px; line-height: 1.5; }
+.ws-budget-card-open { display: block; width: calc(100% + 16px); margin: 2px -8px -8px; padding: 0 8px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--text); text-align: left; }
+.ws-budget-card-open:hover h3, .ws-budget-card-open:focus-visible h3 { color: var(--signal); }
+.ws-budget-card-open > p { margin: 12px 0 0; color: var(--secondary); font-size: 12px; line-height: 1.5; }
+.ws-budget-card-open > span { display: inline-flex; align-items: center; gap: 6px; margin-top: 15px; color: var(--signal); font-size: 12px; font-weight: 600; }
 .ws-card-actions { margin-top: 16px; }
 .ws-segment { display: flex; width: fit-content; margin-bottom: 27px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .ws-segment button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 9px; background: transparent; color: var(--secondary); }
@@ -289,6 +294,11 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
 .ws-invest-hero { margin-bottom: 34px; }
 .ws-toolbar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 22px; }
 .ws-toolbar-primary { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.ws-toolbar-primary.is-budget-filter { grid-template-columns: 1fr; }
+.ws-budget-filter { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: -8px 0 24px; padding: 17px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ws-budget-filter > div { min-width: 0; display: grid; gap: 5px; }
+.ws-budget-filter span, .ws-budget-filter small { color: var(--secondary); font-size: 11px; }
+.ws-budget-filter strong { font-size: 14px; }
 .ws-month-control { display: flex; gap: 8px; }
 .ws-month-control input { min-width: 0; flex: 1; }
 .ws-month-control .ws-ghost { flex: none; }
@@ -360,6 +370,7 @@ h2 { margin: 0; font-size: clamp(23px, 3vw, 30px); font-weight: 550; line-height
   .ws-stat-grid strong { margin: 0; text-align: right; }
   .ws-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ws-toolbar-primary, .ws-filter-more .ws-toolbar { grid-template-columns: 1fr; }
+  .ws-budget-filter { align-items: stretch; flex-direction: column; }
   .ws-row { flex-wrap: wrap; }
   .ws-row-actions { width: 100%; }
   .ws-dialog { position: fixed; top: auto; bottom: 0; width: 100%; max-width: none; max-height: 92dvh; margin: 0; border-radius: 20px 20px 0 0; padding: 22px 17px max(25px, env(safe-area-inset-bottom)); }
